@@ -5,6 +5,7 @@ from Phyme import Phyme # pip install phyme
 import syllables # pip install syllables
 import re
 import time
+import random
 
 # lyricDict will contain a lyric dictionary built from the source text
 # The key will be the last word of each line
@@ -28,7 +29,7 @@ lyricDict = {}
 
 # Source File contains the text to process
 
-sourceFile = "bible.txt"
+sourceFile = "bible_short.txt"
 
 # Some debug counters
 
@@ -54,17 +55,11 @@ if __name__ == "__main__":
 
 	songMeterA = 9 # approx 9 syllables per A line
 	songMeterB = 6 # approx 6 syllables per B line
-	songMeterPadding = 2 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
+	songMeterPadding = 1 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
 
-	# For POC, have the user enter the first line of the song as a seed line.
-	# Otherwise, what?  Maybe randomly pick something?
-	# Get the seed line now so we can discard all source text that doesn't match the meter
-	# This will save an enormous amount of processing.
+	# Set the meter now.  This will save an enormous amount of processing from discarding non-matching lines.
 
 	print("Song Meter- A line:", songMeterA, "syllables; B line:", songMeterB, "syllables")
-	userSongSeedLine = input("Enter the first A line of the song (seed line): ")
-
-	userSongSeedLineLastWord = userSongSeedLine.split()[-1]
 
 	debugProcStartTime = time.time()
 
@@ -110,10 +105,11 @@ if __name__ == "__main__":
 					debugTotalSyllablesSeen += sourceSentenceSyllables
 
 				# Discard all lines that don't match the A or B meter plus-or-minus the meter padding
-				if ( (sourceSentenceSyllables > songMeterA + songMeterPadding) or
-             (sourceSentenceSyllables < songMeterA - songMeterPadding) or
-             (sourceSentenceSyllables > songMeterB + songMeterPadding) or
-             (sourceSentenceSyllables < songMeterB - songMeterPadding) ):
+				if not ( 
+             ( (sourceSentenceSyllables < songMeterA + songMeterPadding) and
+             (sourceSentenceSyllables > songMeterA - songMeterPadding) ) or
+             ( (sourceSentenceSyllables < songMeterB + songMeterPadding) and
+             (sourceSentenceSyllables > songMeterB - songMeterPadding) ) ):
 					debugTotalOutOfMeter += 1
 					debugTotalDiscardedLines += 1
 					continue # Move along.  Nothing to see here.
@@ -138,7 +134,8 @@ if __name__ == "__main__":
 						debugTotalDiscardedLines += 1
 						continue # Move along.  Nothing to see here.
 
-					newLyric = {lastWord:[
+					newLyric = {
+                     lastWord:[
                                  [
                                    [sourceSentence, sourceSentenceSyllables]
                                  ],
@@ -166,3 +163,39 @@ if __name__ == "__main__":
 	print("INFO- Total Unique lyric lines available:", debugTotalUniqueLines)
 	print("INFO- Lyric Dictionary is ready!")
 
+	lyricSearchLimit = 1000 # Search this many time until giving up, otherwise we'll loop forever.  Gross hack but ok 4now
+
+	currentLine = "A"
+
+	lyricVerse = []
+
+	lyricSearchCount = 0
+	
+	lyricLine = ""
+	
+	while (not lyricLine):
+
+		lyricSearchCount += 1
+		if (lyricSearchCount > lyricSearchLimit):
+			print("DEBUG: Reached search limit.  Bye!")
+			break
+
+		# Search for a candidate line
+		lyricLineCandidates = random.choice(list(lyricDict.items()))
+		lyricLineCandidatesInMeter = []
+		# [0] = the lastWord
+		# [1][0] = the sentence list
+		# [1][1] = the rhyme list
+
+		# loop through and find candidates that match this meter
+		for lyricLineCandidate in lyricLineCandidates[1][0]:
+			if ((lyricLineCandidate[1] > songMeterA - songMeterPadding) and (lyricLineCandidate[1] < songMeterA + songMeterPadding)):
+				# This candidate is in meter, consider it
+				lyricLineCandidatesInMeter.append(lyricLineCandidate[0])
+
+			if lyricLineCandidatesInMeter:
+				lyricLine = random.choice(lyricLineCandidatesInMeter)
+
+	lyricVerse.append(lyricLine)
+
+	print(lyricVerse)
