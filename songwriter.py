@@ -6,6 +6,7 @@
 from Phyme import Phyme # pip install phyme
 import syllables # pip install syllables
 import re
+import time
 
 # lyricDict will contain a lyric dictionary built from the source text
 # The key will be the last word of each line
@@ -27,12 +28,30 @@ import re
 
 lyricDict = {}
 
+# Source File contains the text to process
+
+sourceFile = "bible.txt"
+
+# Some debug counters
+
+debugTotalLinesProcessed = 0 # Including garbage lines discarded during processing
+debugTotalWordsProcessed = 0
+debugTotalSyllablesSeen = 0
+debugDiscardedDupes = 0
+debugTotalUniqueLines = 0
+debugProcStartTime = 0
+debugProcEndTime = 0
+
 if __name__ == "__main__":
+
+	debugProcStartTime = time.time()
+
+	print("INFO- Opening file for processing:", sourceFile)
 
 	# Read the entire source file in to a string for later splitting and manipulation
 	# This is very inefficient but hello-world quality for now
 	# Read in and kill the newlines because they're unimportant
-	sourceTextFile = open('bible.txt', 'r') # some public domain text as a test case
+	sourceTextFile = open(sourceFile, 'r') # some public domain text as a test case
 	sourceTextBlob = sourceTextFile.read().replace('\n', ' ')
 	sourceTextFile.close()
 
@@ -40,28 +59,44 @@ if __name__ == "__main__":
 	
 	for sourceSentence in sourceSentences:
 
+			debugTotalLinesProcessed += 1
+
 			if len(sourceSentence) > 1: # Empty elements get caught up in here and crash, look for >1 element sentences only
 
 				sourceSentence = sourceSentence.strip()
 				sourceSentenceWords = sourceSentence.split()
 				lastWord = sourceSentenceWords[-1]
 
+				debugTotalWordsProcessed += len(sourceSentenceWords)
+
 				sourceSentenceSyllables = 0
 				for sourceSentenceWord in sourceSentenceWords:
 					sourceSentenceSyllables += syllables.estimate(sourceSentenceWord)
-
-				#print("DEBUG -- sentence:", sourceSentence, " --- lastword:", lastWord, " --- syllables:", sourceSentenceSyllables)
+					debugTotalSyllablesSeen += sourceSentenceSyllables
 
 				if not lastWord in lyricDict:
 					# Haven't encountered this last word before, so build a lyricDict entry for this last word
-					newLyric = {lastWord:[[sourceSentence, sourceSentenceSyllables]]}
+					newLyric = {lastWord:[
+                                 [
+                                   [sourceSentence, sourceSentenceSyllables]
+                                 ]
+                               ]
+                     }
 					lyricDict.update(newLyric)
-				#else:
-					#print("DEBUG: found key in lyricDict:", lastWord)
-					#print("lyricDict[lastWord][0]:",lyricDict[lastWord][0])
-					#if sourceSentence not in lyricDict[lastWord][0]:
-					#	lyricDict[lastWord][0].append([sourceSentence, sourceSentenceSyllables])
-					#print(lyricDict[lastWord])
-					#print(lyricDict[lastWord][1])
-					#lyricDict[lastWord][1] += 1
-	print(lyricDict)
+					debugTotalUniqueLines += 1
+				else:
+					# This last word has already been catalogued, so add this new sentence to the dictionary entry
+					if [sourceSentence, sourceSentenceSyllables] not in lyricDict[lastWord][0]:
+						# But, only if this sentence doesn't already exist there (deduplicate)
+						lyricDict[lastWord][0].append([sourceSentence, sourceSentenceSyllables])
+						debugTotalUniqueLines += 1
+					else:
+						debugDiscardedDupes += 1
+	
+	debugProcEndTime = time.time()
+	print("INFO- Completed building lyric dictionary in", debugProcEndTime-debugProcStartTime, "seconds")
+	print("INFO- Total Lines Processed:", debugTotalLinesProcessed)
+	print("INFO- Total Words Processed:", debugTotalWordsProcessed)
+	print("INFO- Total Syllables seen:", debugTotalSyllablesSeen)
+	print("INFO- Total Discarded duplicate lines:", debugDiscardedDupes)
+	print("INFO- Total Unique lyric lines available:", debugTotalUniqueLines)
