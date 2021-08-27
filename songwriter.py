@@ -53,13 +53,13 @@ if __name__ == "__main__":
 	# A (approx 9 syllables)
 	# B (approx 6 syllables)
 
-	songMeterA = 9 # approx 9 syllables per A line
-	songMeterB = 6 # approx 6 syllables per B line
+	songMeter = {'A' : 9, 'B' : 6}
+
 	songMeterPadding = 1 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
 
 	# Set the meter now.  This will save an enormous amount of processing from discarding non-matching lines.
 
-	print("Song Meter- A line:", songMeterA, "syllables; B line:", songMeterB, "syllables")
+	print("Song Meter- A line:", songMeter['A'], "syllables; B line:", songMeter['B'], "syllables")
 
 	debugProcStartTime = time.time()
 
@@ -106,10 +106,10 @@ if __name__ == "__main__":
 
 				# Discard all lines that don't match the A or B meter plus-or-minus the meter padding
 				if not ( 
-             ( (sourceSentenceSyllables < songMeterA + songMeterPadding) and
-             (sourceSentenceSyllables > songMeterA - songMeterPadding) ) or
-             ( (sourceSentenceSyllables < songMeterB + songMeterPadding) and
-             (sourceSentenceSyllables > songMeterB - songMeterPadding) ) ):
+             ( (sourceSentenceSyllables < songMeter['A'] + songMeterPadding) and
+             (sourceSentenceSyllables > songMeter['A'] - songMeterPadding) ) or
+             ( (sourceSentenceSyllables < songMeter['B'] + songMeterPadding) and
+             (sourceSentenceSyllables > songMeter['B'] - songMeterPadding) ) ):
 					debugTotalOutOfMeter += 1
 					debugTotalDiscardedLines += 1
 					continue # Move along.  Nothing to see here.
@@ -163,39 +163,64 @@ if __name__ == "__main__":
 	print("INFO- Total Unique lyric lines available:", debugTotalUniqueLines)
 	print("INFO- Lyric Dictionary is ready!")
 
-	lyricSearchLimit = 1000 # Search this many time until giving up, otherwise we'll loop forever.  Gross hack but ok 4now
+	lyricSearchLimit = 1000 # Search this many times until giving up, otherwise may loop forever.  Gross hack but ok 4now
 
 	currentLine = "A"
 
 	lyricVerse = []
 
-	lyricSearchCount = 0
+	# Pick two first lines, an A line and B line
+	while ( len(lyricVerse) < 2 ) :
+
+		lyricSearchCount = 0
 	
-	lyricLine = ""
+		lyricLine = ""
 	
-	while (not lyricLine):
+		while (not lyricLine):
 
-		lyricSearchCount += 1
-		if (lyricSearchCount > lyricSearchLimit):
-			print("DEBUG: Reached search limit.  Bye!")
-			break
+			lyricSearchCount += 1
+			if (lyricSearchCount > lyricSearchLimit):
+				print("DEBUG: Reached search limit.  Bye!")
+				break
 
-		# Search for a candidate line
-		lyricLineCandidates = random.choice(list(lyricDict.items()))
-		lyricLineCandidatesInMeter = []
-		# [0] = the lastWord
-		# [1][0] = the sentence list
-		# [1][1] = the rhyme list
+			# Search for a candidate line
+			lyricLineCandidates = random.choice(list(lyricDict.items()))
+			lyricLineCandidatesInMeter = []
+			# [0] = the lastWord
+			# [1][0] = the sentence list
+			# [1][1] = the rhyme list
 
-		# loop through and find candidates that match this meter
-		for lyricLineCandidate in lyricLineCandidates[1][0]:
-			if ((lyricLineCandidate[1] > songMeterA - songMeterPadding) and (lyricLineCandidate[1] < songMeterA + songMeterPadding)):
-				# This candidate is in meter, consider it
-				lyricLineCandidatesInMeter.append(lyricLineCandidate[0])
+			# loop through and find candidates that match this meter
+			for lyricLineCandidate in lyricLineCandidates[1][0]:
+				if ((lyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (lyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
+					# This candidate is in meter, consider it
+					lyricLineCandidatesInMeter.append(lyricLineCandidate[0])
+
+			print("DEBUG - lyricLineCandidatesInMeter:",lyricLineCandidatesInMeter)
 
 			if lyricLineCandidatesInMeter:
 				lyricLine = random.choice(lyricLineCandidatesInMeter)
+				lyricLineLastWord = lyricLine.split()[-1]
 
-	lyricVerse.append(lyricLine)
+				candidateRhymeList = [] # We'll store some candidates in here for choosing
+
+				for candidateRhyme in lyricDict[lyricLineLastWord][1][0][0]: # Loop through each potential rhyme
+					if candidateRhyme in lyricDict:
+						print("Found potential rhyme:", candidateRhyme)
+						candidateRhymeList.append(candidateRhyme)
+
+				# Dedup and choose a random potential rhyme
+				chosenRhyme = random.choice(list(dict.fromkeys(candidateRhymeList)))
+				print("Chosen Rhyme:",chosenRhyme)
+
+		lyricVerse.append(lyricLine)
+
+		if (currentLine == "A"): currentLine = "B"
+		else: currentLine = "A"
 
 	print(lyricVerse)
+
+
+
+
+
