@@ -34,14 +34,37 @@ sourceFile = "bible.txt"
 
 debugTotalLinesProcessed = 0 # Including garbage lines discarded during processing
 debugTotalWordsProcessed = 0
-debugTotalSyllablesSeen = 0
-debugDiscardedDupes = 0
-debugTotalUniqueLines = 0
-debugTotalUnrhymable = 0
-debugProcStartTime = 0
+debugTotalSyllablesSeen = 0 # Total count of every syllable of every word we've seen
+debugTotalDiscardedLines = 0 # Discarded dupes, unrhymables, out of meter, etc.  All discarded lines
+debugTotalUniqueLines = 0 # Unique lines we've seen
+debugTotalUnrhymable = 0 # LastWords encountered which have no data in the rhyme dictionary
+debugTotalOutOfMeter = 0 # Lines that don't match our desired meter
+debugProcStartTime = 0 # Clocks for tracking execution time
 debugProcEndTime = 0
 
 if __name__ == "__main__":
+
+	# Song Building
+	# PROOF OF CONCEPT
+	# Rhyme and meter scheme:
+	# A (approx 9 syllables)
+	# B (approx 6 syllables)
+	# A (approx 9 syllables)
+	# B (approx 6 syllables)
+
+	songMeterA = 9 # approx 9 syllables per A line
+	songMeterB = 6 # approx 6 syllables per B line
+	songMeterPadding = 2 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
+
+	# For POC, have the user enter the first line of the song as a seed line.
+	# Otherwise, what?  Maybe randomly pick something?
+	# Get the seed line now so we can discard all source text that doesn't match the meter
+	# This will save an enormous amount of processing.
+
+	print("Song Meter- A line:", songMeterA, "syllables; B line:", songMeterB, "syllables")
+	userSongSeedLine = input("Enter the first A line of the song (seed line): ")
+
+	userSongSeedLineLastWord = userSongSeedLine.split()[-1]
 
 	debugProcStartTime = time.time()
 
@@ -63,7 +86,7 @@ if __name__ == "__main__":
 	print("INFO- Deduplicating sentence list ...")
 	sourceSentences = list(dict.fromkeys(sourceSentences))
 
-	debugDiscardedDupes = debugTotalLinesSeen - len(sourceSentences)
+	debugTotalDiscardedLines = debugTotalLinesSeen - len(sourceSentences)
 
 	print("INFO- Building lyric dictionary ...")
 	
@@ -86,6 +109,14 @@ if __name__ == "__main__":
 					sourceSentenceSyllables += syllables.estimate(sourceSentenceWord)
 					debugTotalSyllablesSeen += sourceSentenceSyllables
 
+				# Discard all lines that don't match the A or B meter plus-or-minus the meter padding
+				if ( (sourceSentenceSyllables > songMeterA + songMeterPadding) or
+             (sourceSentenceSyllables < songMeterA - songMeterPadding) or
+             (sourceSentenceSyllables > songMeterB + songMeterPadding) or
+             (sourceSentenceSyllables < songMeterB - songMeterPadding) ):
+					debugTotalOutOfMeter += 1
+					debugTotalDiscardedLines += 1
+					continue # Move along.  Nothing to see here.
 
 				if not lastWord in lyricDict:
 					# Haven't encountered this last word before, so build a lyricDict entry for this last word
@@ -104,11 +135,15 @@ if __name__ == "__main__":
 					except KeyError:
 						# Can't find any rhyming words in the dictionary, so just discard this entirely and move along
 						debugTotalUnrhymable += 1
+						debugTotalDiscardedLines += 1
 						continue # Move along.  Nothing to see here.
 
 					newLyric = {lastWord:[
                                  [
                                    [sourceSentence, sourceSentenceSyllables]
+                                 ],
+                                 [
+                                   [sourceSentenceRhymeList1, 0]
                                  ]
                                ]
                      }
@@ -125,6 +160,9 @@ if __name__ == "__main__":
 	print("INFO- Total Lines Processed:", debugTotalLinesProcessed)
 	print("INFO- Total Words Processed:", debugTotalWordsProcessed)
 	print("INFO- Total Syllables seen:", debugTotalSyllablesSeen)
-	print("INFO- Total Discarded duplicate lines:", debugDiscardedDupes)
-	print("INFO- Total Un-Rhymable words encountered:", debugTotalUnrhymable)
+	print("INFO- Total Discarded lines:", debugTotalDiscardedLines)
+	print("INFO- Total Un-Rhymable words:", debugTotalUnrhymable)
+	print("INFO- Total Out-Of-Meter lines:", debugTotalOutOfMeter)
 	print("INFO- Total Unique lyric lines available:", debugTotalUniqueLines)
+	print("INFO- Lyric Dictionary is ready!")
+
