@@ -167,16 +167,16 @@ if __name__ == "__main__":
 
 	currentLine = "A"
 
-	lyricVerse = []
+	lyricVerse = [] # Store the final chosen verses here
 
-	# Pick two first lines, an A line and B line
-	while ( len(lyricVerse) < 2 ) :
+	while ( len(lyricVerse) < 4 ) : # Loop until we have 4 lines
 
 		lyricSearchCount = 0
 	
 		lyricLine = ""
+		rhymeLine = ""
 	
-		while (not lyricLine):
+		while (not (lyricLine and rhymeLine)): # Loop until we have found viable lyricLine and associated rhymeLine
 
 			lyricSearchCount += 1
 			if (lyricSearchCount > lyricSearchLimit):
@@ -196,31 +196,48 @@ if __name__ == "__main__":
 					# This candidate is in meter, consider it
 					lyricLineCandidatesInMeter.append(lyricLineCandidate[0])
 
-			print("DEBUG - lyricLineCandidatesInMeter:",lyricLineCandidatesInMeter)
+			# print("DEBUG - ", currentLine, "line: Considering line candidates:",lyricLineCandidatesInMeter)
 
 			if lyricLineCandidatesInMeter:
-				lyricLine = random.choice(lyricLineCandidatesInMeter)
+				lyricLine = random.choice(lyricLineCandidatesInMeter) # Pick a random candidate lyric line
 				lyricLineLastWord = lyricLine.split()[-1]
 
-				candidateRhymeList = [] # We'll store some candidates in here for choosing
+				candidateRhymeList = [] # We'll store some rhyme candidates in here for choosing
 
 				for candidateRhyme in lyricDict[lyricLineLastWord][1][0][0]: # Loop through each potential rhyme
 					if candidateRhyme in lyricDict:
-						print("Found potential rhyme:", candidateRhyme)
-						candidateRhymeList.append(candidateRhyme)
+						# print("DEBUG - ", currentLine, "line: - Found rhyme words existing in the lyricDict:", candidateRhyme)
+						# Add it to the candidate rhyme word list, unless it's exactly the same word
+						if not (candidateRhyme == lyricLineLastWord):
+							candidateRhymeList.append(candidateRhyme)
 
-				# Dedup and choose a random potential rhyme
-				chosenRhyme = random.choice(list(dict.fromkeys(candidateRhymeList)))
-				print("Chosen Rhyme:",chosenRhyme)
+				if candidateRhymeList:
+					# Dedup and choose a random potential rhyme word
+					chosenRhyme = random.choice(list(dict.fromkeys(candidateRhymeList)))
+					# print("DEBUG - ", currentLine, "line: - Chosen rhyme word:",chosenRhyme)
+
+					# Find a list of lines that have the same lastWord that rhymes
+					chosenRhymeLyricLineCandidates = lyricDict[chosenRhyme][0]
+					# print("DEBUG - ", currentLine, "line: - - Rhyming line candidates:",chosenRhymeLyricLineCandidates)
+
+					chosenRhymeLyricLineCandidatesInMeter = []
+
+					# loop through and find candidate lines that match this meter
+					for chosenRhymeLyricLineCandidate in chosenRhymeLyricLineCandidates:
+						if ((chosenRhymeLyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (chosenRhymeLyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
+							# Add them to the candidate list unless they're exactly the same line
+							if not (chosenRhymeLyricLineCandidate[0] == lyricLine) :
+								chosenRhymeLyricLineCandidatesInMeter.append(chosenRhymeLyricLineCandidate[0])
+
+					if chosenRhymeLyricLineCandidatesInMeter:
+						rhymeLine = random.choice(chosenRhymeLyricLineCandidatesInMeter)
 
 		lyricVerse.append(lyricLine)
+		lyricVerse.append(rhymeLine)
 
 		if (currentLine == "A"): currentLine = "B"
 		else: currentLine = "A"
 
-	print(lyricVerse)
+	Verse = [lyricVerse[0], lyricVerse[2], lyricVerse[1], lyricVerse[3]] # Put it in ABAB
 
-
-
-
-
+	print(Verse)
