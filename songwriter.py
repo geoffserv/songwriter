@@ -29,7 +29,10 @@ lyricDict = {}
 
 # Source File contains the text to process
 
-sourceFile = "bible_short.txt"
+sourceFile = "bible.txt"
+
+# Verses to generate
+countVersesToGenerate = 10
 
 # Some debug counters
 
@@ -163,81 +166,89 @@ if __name__ == "__main__":
 	print("INFO- Total Unique lyric lines available:", debugTotalUniqueLines)
 	print("INFO- Lyric Dictionary is ready!")
 
-	lyricSearchLimit = 1000 # Search this many times until giving up, otherwise may loop forever.  Gross hack but ok 4now
+	countVersesSoFar = 0 # How many verses we've generated so far
 
-	currentLine = "A"
+	print("INFO- Beginning generation of", countVersesToGenerate, "verses")
 
-	lyricVerse = [] # Store the final chosen verses here
+	while (countVersesSoFar < countVersesToGenerate):
 
-	while ( len(lyricVerse) < 4 ) : # Loop until we have 4 lines
+		lyricSearchLimit = 1000 # Search this many times until giving up, otherwise may loop forever.  Gross hack but ok 4now
 
-		lyricSearchCount = 0
+		currentLine = "A"
+
+		lyricVerse = [] # Store the final chosen verses here
+
+		while ( len(lyricVerse) < 4 ) : # Loop until we have 4 lines
+
+			lyricSearchCount = 0
 	
-		lyricLine = ""
-		rhymeLine = ""
+			lyricLine = ""
+			rhymeLine = ""
 	
-		while (not (lyricLine and rhymeLine)): # Loop until we have found viable lyricLine and associated rhymeLine
+			while (not (lyricLine and rhymeLine)): # Loop until we have found viable lyricLine and associated rhymeLine
 
-			lyricSearchCount += 1
-			if (lyricSearchCount > lyricSearchLimit):
-				print("DEBUG: Reached search limit.  Bye!")
-				break
+				lyricSearchCount += 1
+				if (lyricSearchCount > lyricSearchLimit):
+					print("DEBUG: Reached search limit.  Bye!")
+					break
 
-			# Search for a candidate line
-			lyricLineCandidates = random.choice(list(lyricDict.items()))
-			lyricLineCandidatesInMeter = []
-			# [0] = the lastWord
-			# [1][0] = the sentence list
-			# [1][1] = the rhyme list
+				# Search for a candidate line
+				lyricLineCandidates = random.choice(list(lyricDict.items()))
+				lyricLineCandidatesInMeter = []
+				# [0] = the lastWord
+				# [1][0] = the sentence list
+				# [1][1] = the rhyme list
 
-			# loop through and find candidates that match this meter
-			for lyricLineCandidate in lyricLineCandidates[1][0]:
-				if ((lyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (lyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
-					# This candidate is in meter, consider it
-					lyricLineCandidatesInMeter.append(lyricLineCandidate[0])
+				# loop through and find candidates that match this meter
+				for lyricLineCandidate in lyricLineCandidates[1][0]:
+					if ((lyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (lyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
+						# This candidate is in meter, consider it
+						lyricLineCandidatesInMeter.append(lyricLineCandidate[0])
 
-			# print("DEBUG - ", currentLine, "line: Considering line candidates:",lyricLineCandidatesInMeter)
+				# print("DEBUG - ", currentLine, "line: Considering line candidates:",lyricLineCandidatesInMeter)
 
-			if lyricLineCandidatesInMeter:
-				lyricLine = random.choice(lyricLineCandidatesInMeter) # Pick a random candidate lyric line
-				lyricLineLastWord = lyricLine.split()[-1]
+				if lyricLineCandidatesInMeter:
+					lyricLine = random.choice(lyricLineCandidatesInMeter) # Pick a random candidate lyric line
+					lyricLineLastWord = lyricLine.split()[-1]
 
-				candidateRhymeList = [] # We'll store some rhyme candidates in here for choosing
+					candidateRhymeList = [] # We'll store some rhyme candidates in here for choosing
 
-				for candidateRhyme in lyricDict[lyricLineLastWord][1][0][0]: # Loop through each potential rhyme
-					if candidateRhyme in lyricDict:
-						# print("DEBUG - ", currentLine, "line: - Found rhyme words existing in the lyricDict:", candidateRhyme)
-						# Add it to the candidate rhyme word list, unless it's exactly the same word
-						if not (candidateRhyme == lyricLineLastWord):
-							candidateRhymeList.append(candidateRhyme)
+					for candidateRhyme in lyricDict[lyricLineLastWord][1][0][0]: # Loop through each potential rhyme
+						if candidateRhyme in lyricDict:
+							# print("DEBUG - ", currentLine, "line: - Found rhyme words existing in the lyricDict:", candidateRhyme)
+							# Add it to the candidate rhyme word list, unless it's exactly the same word
+							if not (candidateRhyme == lyricLineLastWord):
+								candidateRhymeList.append(candidateRhyme)
 
-				if candidateRhymeList:
-					# Dedup and choose a random potential rhyme word
-					chosenRhyme = random.choice(list(dict.fromkeys(candidateRhymeList)))
-					# print("DEBUG - ", currentLine, "line: - Chosen rhyme word:",chosenRhyme)
+					if candidateRhymeList:
+						# Dedup and choose a random potential rhyme word
+						chosenRhyme = random.choice(list(dict.fromkeys(candidateRhymeList)))
+						# print("DEBUG - ", currentLine, "line: - Chosen rhyme word:",chosenRhyme)
 
-					# Find a list of lines that have the same lastWord that rhymes
-					chosenRhymeLyricLineCandidates = lyricDict[chosenRhyme][0]
-					# print("DEBUG - ", currentLine, "line: - - Rhyming line candidates:",chosenRhymeLyricLineCandidates)
+						# Find a list of lines that have the same lastWord that rhymes
+						chosenRhymeLyricLineCandidates = lyricDict[chosenRhyme][0]
+						# print("DEBUG - ", currentLine, "line: - - Rhyming line candidates:",chosenRhymeLyricLineCandidates)
 
-					chosenRhymeLyricLineCandidatesInMeter = []
+						chosenRhymeLyricLineCandidatesInMeter = []
 
-					# loop through and find candidate lines that match this meter
-					for chosenRhymeLyricLineCandidate in chosenRhymeLyricLineCandidates:
-						if ((chosenRhymeLyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (chosenRhymeLyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
-							# Add them to the candidate list unless they're exactly the same line
-							if not (chosenRhymeLyricLineCandidate[0] == lyricLine) :
-								chosenRhymeLyricLineCandidatesInMeter.append(chosenRhymeLyricLineCandidate[0])
+						# loop through and find candidate lines that match this meter
+						for chosenRhymeLyricLineCandidate in chosenRhymeLyricLineCandidates:
+							if ((chosenRhymeLyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (chosenRhymeLyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
+								# Add them to the candidate list unless they're exactly the same line
+								if not (chosenRhymeLyricLineCandidate[0] == lyricLine) :
+									chosenRhymeLyricLineCandidatesInMeter.append(chosenRhymeLyricLineCandidate[0])
 
-					if chosenRhymeLyricLineCandidatesInMeter:
-						rhymeLine = random.choice(chosenRhymeLyricLineCandidatesInMeter)
+						if chosenRhymeLyricLineCandidatesInMeter:
+							rhymeLine = random.choice(chosenRhymeLyricLineCandidatesInMeter)
 
-		lyricVerse.append(lyricLine)
-		lyricVerse.append(rhymeLine)
+			lyricVerse.append(lyricLine)
+			lyricVerse.append(rhymeLine)
 
-		if (currentLine == "A"): currentLine = "B"
-		else: currentLine = "A"
+			if (currentLine == "A"): currentLine = "B"
+			else: currentLine = "A"
 
-	Verse = [lyricVerse[0], lyricVerse[2], lyricVerse[1], lyricVerse[3]] # Put it in ABAB
+		Verse = [lyricVerse[0], lyricVerse[2], lyricVerse[1], lyricVerse[3]] # Put it in ABAB
 
-	print(Verse)
+		print(Verse)
+
+		countVersesSoFar += 1
