@@ -43,7 +43,7 @@ lyricDict = {}
 
 # Source File contains the text to process
 
-sourceFile = "bible.txt"
+sourceFile = "big.txt"
 
 # Verses to generate
 countVersesToGenerate = 25
@@ -69,14 +69,15 @@ if __name__ == "__main__":
 	# A (approx 9 syllables)
 	# B (approx 6 syllables)
 
-	songMeter = {'A' : 9, 'B' : 6}
+	songMeter = {'A' : 10, 'B' : 10}
 
-	songMeterPadding = 1 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
+	songMeterPadding = 0 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
 
 	# Set the meter now.  This will save an enormous amount of processing by discarding non-meter-matching 
 	# lines prior to all the syllable estimation and rhyme calculation
 
-	print("INFO- Song Meter- A line:", songMeter['A'], "syllables; B line:", songMeter['B'], "syllables")
+	print("INFO- SETTINGS- Song Meter- A line:", songMeter['A'], " +-", songMeterPadding,"syllables") 
+	print("INFO- SETTINGS- Song Meter- B line:", songMeter['B'], " +-", songMeterPadding,"syllables")
 
 	debugProcStartTime = time.time()
 
@@ -123,10 +124,10 @@ if __name__ == "__main__":
 
 				# Skip any lines that don't match the A or B meter plus-or-minus the meter padding
 				if not ( 
-             ( (sourceSentenceSyllables < songMeter['A'] + songMeterPadding) and
-             (sourceSentenceSyllables > songMeter['A'] - songMeterPadding) ) or
-             ( (sourceSentenceSyllables < songMeter['B'] + songMeterPadding) and
-             (sourceSentenceSyllables > songMeter['B'] - songMeterPadding) ) ):
+             ( (sourceSentenceSyllables <= songMeter['A'] + songMeterPadding) and
+             (sourceSentenceSyllables >= songMeter['A'] - songMeterPadding) ) or
+             ( (sourceSentenceSyllables <= songMeter['B'] + songMeterPadding) and
+             (sourceSentenceSyllables >= songMeter['B'] - songMeterPadding) ) ):
 					debugTotalOutOfMeter += 1
 					debugTotalDiscardedLines += 1
 					continue # Move along.  Nothing to see here.
@@ -215,7 +216,7 @@ if __name__ == "__main__":
 
 				# loop through and find candidates that match this meter
 				for lyricLineCandidate in lyricLineCandidates[1][0]:
-					if ((lyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (lyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
+					if ((lyricLineCandidate[1] >= songMeter[currentLine] - songMeterPadding) and (lyricLineCandidate[1] <= songMeter[currentLine] + songMeterPadding)):
 						# This candidate is in meter, consider it
 						lyricLineCandidatesInMeter.append(lyricLineCandidate[0])
 
@@ -243,7 +244,7 @@ if __name__ == "__main__":
 
 						# loop through and find candidate lines that match this meter.  Every line in this list already rhymes
 						for chosenRhymeLyricLineCandidate in chosenRhymeLyricLineCandidates:
-							if ((chosenRhymeLyricLineCandidate[1] > songMeter[currentLine] - songMeterPadding) and (chosenRhymeLyricLineCandidate[1] < songMeter[currentLine] + songMeterPadding)):
+							if ((chosenRhymeLyricLineCandidate[1] >= songMeter[currentLine] - songMeterPadding) and (chosenRhymeLyricLineCandidate[1] <= songMeter[currentLine] + songMeterPadding)):
 								# Add them to the candidate list unless they're exactly the same line
 								if not (chosenRhymeLyricLineCandidate[0] == lyricLine) :
 									chosenRhymeLyricLineCandidatesInMeter.append(chosenRhymeLyricLineCandidate[0])
