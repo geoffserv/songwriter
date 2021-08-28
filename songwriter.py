@@ -6,6 +6,7 @@ import syllables # pip install syllables
 import re
 import time
 import random
+import pprint
 
 # lyricDict will contain a lyric dictionary built from the source text
 #
@@ -262,6 +263,6 @@ if __name__ == "__main__":
 
 		Verse = [lyricVerse[0], lyricVerse[2], lyricVerse[1], lyricVerse[3]] # Put it in ABAB
 
-		print(Verse)
+		pprint.pprint(Verse)
 
 		countVersesSoFar += 1
