@@ -44,7 +44,7 @@ lyricDict = {}
 
 # Source File contains the text to process
 
-sourceFile = "big.txt"
+sourceFile = "bible.txt"
 
 # Verses to generate
 countVersesToGenerate = 25
@@ -70,9 +70,9 @@ if __name__ == "__main__":
 	# A (approx 9 syllables)
 	# B (approx 6 syllables)
 
-	songMeter = {'A' : 10, 'B' : 10}
+	songMeter = {'A' : 9, 'B' : 6}
 
-	songMeterPadding = 0 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
+	songMeterPadding = 1 # Give or take this many syllables.  The syllable estimator is also kinda inaccurate
 
 	# Set the meter now.  This will save an enormous amount of processing by discarding non-meter-matching 
 	# lines prior to all the syllable estimation and rhyme calculation
